@@ -110,13 +110,14 @@
 	// Minilift Up
 	void ballShooterUp(int angle)
 	{
+		int currentAngle;
 
-		while(int currentAngle < angle)
+		while(currentAngle < angle)
 		{
 			currentAngle = SensorValue[MiniliftPotentiometer] * 0.06471306471;
 			setMotor(MiniLift, -50);
 		}
-		setMotor(Minilift, 0);
+		setMotor(MiniLift, 0);
 
 	}
 
@@ -124,13 +125,14 @@
 	// Minilift Down
 	void ballShooterDown(int angle)
 	{
+		int currentAngle;
 
-		while(int currentAngle < angle)
+		while(currentAngle < angle)
 		{
 			currentAngle = SensorValue[MiniliftPotentiometer] * -0.06471306471;
 			setMotor(MiniLift, 50);
 		}
-		setMotor(Minilift, 0);
+		setMotor(MiniLift, 0);
 
 	}
 
