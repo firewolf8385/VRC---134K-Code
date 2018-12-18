@@ -1,8 +1,9 @@
 #pragma config(Sensor, in1,    LeftPotentiometer, sensorPotentiometer)
 #pragma config(Sensor, in2,    RightPotentiometer, sensorPotentiometer)
 #pragma config(Sensor, in3,    MiniliftPotentiometer, sensorPotentiometer)
-#pragma config(Sensor, dgtl1,  JumperClip,     sensorDigitalIn)
-#pragma config(Sensor, dgtl2,  JumperClip2,    sensorDigitalIn)
+#pragma config(Sensor, dgtl1,  JCAuto,         sensorDigitalIn)
+#pragma config(Sensor, dgtl2,  JCSide,         sensorDigitalIn)
+#pragma config(Sensor, dgtl3,  JCPS,           sensorDigitalIn)
 #pragma config(Sensor, dgtl5,  RightBumper,    sensorTouch)
 #pragma config(Sensor, dgtl6,  LeftBumper,     sensorTouch)
 #pragma config(Sensor, dgtl7,  RightLED,       sensorLEDtoVCC)
@@ -38,12 +39,11 @@
 /*                                                                           */
 /*                      Autonomous Functions and Tasks                       */
 /*                                                                           */
-
 /*---------------------------------------------------------------------------*/
 
 	//Blink Right LED
-	 task blinkRightLED()
-	 {
+	task blinkRightLED()
+	{
 	  SensorValue[RightLED] = 0;
 	  wait1Msec(100);
 	  SensorValue[RightLED] = 1;
@@ -233,7 +233,7 @@
 
 void pre_auton()
 {
-	int jumper = SensorValue[JumperClip];
+	int jumper = SensorValue[JCAuto];
 
 	if(jumper == 0){
 		startTask(blinkLeftLED);
@@ -253,61 +253,82 @@ void pre_auton()
 
 task autonomous()
 {
-	int jumper = SensorValue[JumperClip];
-	int side = SensorValue[JumperClip2];
+	int jumper = SensorValue[JCAuto];
+	int side = SensorValue[JCSide];
+	int skills = SensorValue[JCPS];
 
-	// Near Square
-	if(jumper == 0)
+	// Check If Running Programming Skills
+	if(skills == 1)
 	{
-		setMotor(MiniLift, 30);
-  	wait1Msec(750);
- 		setMotor(MiniLift, 0);
-  	delay(10);
-  	setMotor(BallLauncher, -127);
-  	wait(2.75);
-  	setMotor(BallLauncher, 0);
+		ballShooterDown(100);
+		wait1Msec(250);
+		shoot_ball();
+		wait1Msec(100);
+		ballShooterUp(0);
+		wait(100);
+		drive_forwards(42);
+		wait1Msec(250);
+		drive_backwards(66);
+		wait1Msec(250);
+		turn_right(500);
+		wait1Msec(250);
+		drive_forwards(66);
 	}
-
-	// Far Square
 	else
 	{
-
-		//Red
-		if(side == 0)
+				// Near Square
+		if(jumper == 0)
 		{
-			ballShooterDown(100);
-			wait1Msec(250);
-			shoot_ball();
-			wait1Msec(100);
-			ballShooterUp(0);
-			wait(100);
-			drive_forwards(42);
-			wait1Msec(250);
-			drive_backwards(66);
-			wait1Msec(250);
-			turn_right(500);
-			wait1Msec(250);
-			drive_forwards(42);
+			setMotor(MiniLift, 30);
+	  	wait1Msec(750);
+	 		setMotor(MiniLift, 0);
+	  	delay(10);
+	  	setMotor(BallLauncher, -127);
+	  	wait(2.75);
+	  	setMotor(BallLauncher, 0);
 		}
 
-		//Blue
+		// Far Square
 		else
 		{
-			ballShooterDown(100);
-			wait1Msec(250);
-			ballShooterUp(0);
-			wait(100);
-			shoot_ball();
-			wait1Msec(100);
-			drive_forwards(42);
-			wait1Msec(250);
-			drive_backwards(66);
-			wait1Msec(250);
-			turn_left(500);
-			wait1Msec(250);
-			drive_forwards(42);
-		}
 
+			//Red
+			if(side == 0)
+			{
+				ballShooterDown(100);
+				wait1Msec(250);
+				shoot_ball();
+				wait1Msec(100);
+				ballShooterUp(0);
+				wait(100);
+				drive_forwards(42);
+				wait1Msec(250);
+				drive_backwards(66);
+				wait1Msec(250);
+				turn_right(500);
+				wait1Msec(250);
+				drive_forwards(42);
+			}
+
+			//Blue
+			else
+			{
+				ballShooterDown(100);
+				wait1Msec(250);
+				ballShooterUp(0);
+				wait(100);
+				shoot_ball();
+				wait1Msec(100);
+				drive_forwards(42);
+				wait1Msec(250);
+				drive_backwards(66);
+				wait1Msec(250);
+				turn_left(500);
+				wait1Msec(250);
+				drive_forwards(42);
+			}
+
+		}
 	}
 
 }
