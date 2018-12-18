@@ -1,8 +1,10 @@
-#pragma config(Sensor, in7,    RightPotentiometer, sensorPotentiometer)
-#pragma config(Sensor, in8,    LeftPotentiometer, sensorPotentiometer)
+#pragma config(Sensor, in1,    LeftPotentiometer, sensorPotentiometer)
+#pragma config(Sensor, in2,    RightPotentiometer, sensorPotentiometer)
+#pragma config(Sensor, in3,    MiniliftPotentiometer, sensorPotentiometer)
 #pragma config(Sensor, dgtl1,  JumperClip,     sensorDigitalIn)
-#pragma config(Sensor, dgtl2,  RightBumper,    sensorTouch)
-#pragma config(Sensor, dgtl3,  LeftBumper,     sensorTouch)
+#pragma config(Sensor, dgtl2,  JumperClip2,    sensorDigitalIn)
+#pragma config(Sensor, dgtl5,  RightBumper,    sensorTouch)
+#pragma config(Sensor, dgtl6,  LeftBumper,     sensorTouch)
 #pragma config(Sensor, dgtl7,  RightLED,       sensorLEDtoVCC)
 #pragma config(Sensor, dgtl8,  LeftLED,        sensorLEDtoVCC)
 #pragma config(Sensor, dgtl9,  RightQuad1,     sensorQuadEncoder)
@@ -34,19 +36,24 @@
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
-/*                            Functions and Tasks                            */
+/*                      Autonomous Functions and Tasks                       */
 /*                                                                           */
+
 /*---------------------------------------------------------------------------*/
 
-  //Blink Right LED Task
-  task blinkRightLED(){
-  	SensorValue[RightLED] = 0;
-  	wait1Msec(100);
-  	SensorValue[RightLED] = 1;
-  	wait1Msec(100);
+	//Blink Right LED
+	 task blinkRightLED()
+	 {
+	  SensorValue[RightLED] = 0;
+	  wait1Msec(100);
+	  SensorValue[RightLED] = 1;
+	  wait1Msec(100);
 	}
 
-	task blinkLeftLED(){
+
+	// Blink Left LED
+	task blinkLeftLED()
+	{
 		SensorValue[LeftLED] = 0;
 		wait1Msec(100);
 		SensorValue[LeftLED] = 1;
@@ -54,16 +61,105 @@
 	}
 
 
+	// Drive Forwards
+	void drive_forwards(float inches)
+	{
+		SensorValue[RightQuad1] = 0;
+		float distance = SensorValue[RightQuad1] * 0.03491;
+
+		while(distance < inches){
+			setMultipleMotors(100, DriveFR, DriveBR, DriveFL, DriveBL);
+		}
+		setMultipleMotors(0, DriveFR, DriveBR, DriveFL, DriveBL);
+	}
+
+
+	// Drive Backwards
+	void drive_backwards(float inches)
+	{
+		SensorValue[RightQuad1] = 0;
+		float distance = SensorValue[RightQuad1] * -0.03491;
+
+		while(distance < inches){
+			setMultipleMotors(100, DriveFR, DriveBR, DriveFL, DriveBL);
+		}
+		setMultipleMotors(0, DriveFR, DriveBR, DriveFL, DriveBL);
+	}
+
+
+	// Turn Left
+	void turn_left(int time)
+	{
+		setMultipleMotors(-100, DriveFR, DriveBR);
+		setMultipleMotors(100, DriveFL, DriveBL);
+		wait1Msec(time);
+		setMultipleMotors(0, DriveFR, DriveBR, DriveFL, DriveBL);
+	}
+
+
+  // Turn Right
+	void turn_right(int time)
+	{
+		setMultipleMotors(100, DriveFR, DriveBR);
+		setMultipleMotors(-100, DriveFL, DriveBL);
+		wait1Msec(time);
+		setMultipleMotors(0, DriveFR, DriveBR, DriveFL, DriveBL);
+	}
+
+
+	// Minilift Up
+	void ballShooterUp(int angle)
+	{
+
+		while(int currentAngle < angle)
+		{
+			currentAngle = SensorValue[MiniliftPotentiometer] * 0.06471306471;
+			setMotor(MiniLift, -50);
+		}
+		setMotor(Minilift, 0);
+
+	}
+
+
+	// Minilift Down
+	void ballShooterDown(int angle)
+	{
+
+		while(int currentAngle < angle)
+		{
+			currentAngle = SensorValue[MiniliftPotentiometer] * -0.06471306471;
+			setMotor(MiniLift, 50);
+		}
+		setMotor(Minilift, 0);
+
+	}
+
+
+	// Shoot Ball
+	void shoot_ball()
+	{
+		setMotor(BallLauncher, -127);
+		wait1Msec(2000);
+		setMotor(BallLauncher, 0);
+	}
+
+
+/*---------------------------------------------------------------------------*/
+/*                                                                           */
+/*                         Driver Control Functions                          */
+/*                                                                           */
+/*---------------------------------------------------------------------------*/
+
   // Minilift Function
-  void ballShooterLift(int up, int down)
+  void ballShooterLift()
   {
-  	if(up == 1)
+  	if(vexRT(Btn5U) == 1)
   	{
 			setMotor(MiniLift, -50);
 		}
-		else if(vexRT(down) == 1)
+		else if(vexRT(Btn5D) == 1)
 		{
-			setMotor(MiniLift, 50);
+			setMotor(MiniLift, 30);
 		}
 		else
 		{
@@ -73,8 +169,8 @@
 
 
   // Ball Shooter Function
-  void ballShooter(int shoot){
-  	if(shoot == 1)
+  void ballShooter(){
+  	if(vexRT(Btn7D))
 		{
 			setMotor(BallLauncher, -127);
 		}
@@ -85,8 +181,28 @@
 	}
 
 
+  // Lift Angle Correction Function
+  void correctLift(int Left, int Right)
+  {
+  	setMotor(LiftL, 0);
+
+  	if(Right > Left)
+  	{
+  		setMotor(LiftR, 20);
+  	}
+  	else if(Left > Right)
+  	{
+  		setMotor(LiftR, -20);
+  	}
+  	else
+  	{
+  		setMotor(LiftR, 0);
+  	}
+	}
+
+
   // Lift Function
-  void lift(int up, int down)
+  void lift(int Left, int Right)
   {
   	if(vexRT(Btn6U) == 1)
 		{
@@ -103,29 +219,9 @@
 			setMotor(LiftR, 0);
 			setMotor(LiftL, 0);
 		}
+		correctLift(Left, Right);
   }
 
-
-  // Lift Angle Correction Function
-  void angleCorrection(int Right, int Left)
-  {
-  	if(Right != Left)
-  	{
-  		if(Right > Left)
-  		{
-  			setMotor(LiftL, 40);
-  		}
-  		else
-  		{
-  			setMotor(LiftR, 40);
-  		}
-  	}
-  	else
-  	{
-  		setMotor(LiftR, 0);
-			setMotor(LiftL, 0);
-  	}
-	}
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -135,9 +231,9 @@
 
 void pre_auton()
 {
-	int auto = SensorValue[JumperClip];
+	int jumper = SensorValue[JumperClip];
 
-	if(auto == 0){
+	if(jumper == 0){
 		startTask(blinkLeftLED);
 	}
 	else{
@@ -155,8 +251,65 @@ void pre_auton()
 
 task autonomous()
 {
-  AutonomousCodePlaceholderForTesting();
+	int jumper = SensorValue[JumperClip];
+	int side = SensorValue[JumperClip2];
+
+	// Near Square
+	if(jumper == 0)
+	{
+		setMotor(MiniLift, 30);
+  	wait1Msec(750);
+ 		setMotor(MiniLift, 0);
+  	delay(10);
+  	setMotor(BallLauncher, -127);
+  	wait(2.75);
+  	setMotor(BallLauncher, 0);
+	}
+
+	// Far Square
+	else
+	{
+
+		//Red
+		if(side == 0)
+		{
+			ballShooterDown(100);
+			wait1Msec(250);
+			shoot_ball();
+			wait1Msec(100);
+			ballShooterUp(0);
+			wait(100);
+			drive_forwards(42);
+			wait1Msec(250);
+			drive_backwards(66);
+			wait1Msec(250);
+			turn_right(500);
+			wait1Msec(250);
+			drive_forwards(42);
+		}
+
+		//Blue
+		else
+		{
+			ballShooterDown(100);
+			wait1Msec(250);
+			ballShooterUp(0);
+			wait(100);
+			shoot_ball();
+			wait1Msec(100);
+			drive_forwards(42);
+			wait1Msec(250);
+			drive_backwards(66);
+			wait1Msec(250);
+			turn_left(500);
+			wait1Msec(250);
+			drive_forwards(42);
+		}
+
+	}
+
 }
+
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
@@ -177,26 +330,17 @@ task usercontrol()
 
 
   	// Minilift
-  	int MiniliftUp = vexRT(Btn5U);
-  	int MiniliftDown = vexRT(Btn5D);
-  	ballShooterLift(MiniliftUp, MiniliftDown);
+  	ballShooterLift();
 
 
 		// Ball Shooter
-		int ShootButton = vexRT(Btn7D);
-		ballShooter(ShootButton);
+		ballShooter();
 
 
   	// Lift
-		int LiftUp = vexRT(Btn6U);
-		int LiftDown = vexRT(Btn6D);
-		lift(LiftUp, LiftDown);
-
-
-  	// Lift Angle Correction
-  	int AngleLiftR = SensorValue[RightPotentiometer];
-		int AngleLiftL = SensorValue[LeftPotentiometer];
-		angleCorrection(AngleLiftR, AngleLiftL);
+		int LiftRight = SensorValue[RightPotentiometer] * 0.06471306471;
+		int LiftLeft = SensorValue[LeftPotentiometer] * 0.06471306471;
+		lift(LiftLeft, LiftRight);
   }
 
 }
